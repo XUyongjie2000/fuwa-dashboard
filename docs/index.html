@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🐾 福娃战队</title>
+<style>
+:root {
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --green: #00b578;
+  --green-light: #e8f7f0;
+  --red: #e64340;
+  --red-light: #fce8e8;
+  --text: #1a1a1a;
+  --text2: #666;
+  --text3: #999;
+  --border: #f0f0f0;
+  --shadow: 0 1px 8px rgba(0,0,0,0.06);
+  --tag-bg: #f5f5f5;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", "Helvetica Neue", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 80px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Nav bar */
+.navbar {
+  background: var(--card);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 600;
+  border-bottom: 0.5px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+/* Sort info */
+.sort-bar {
+  padding: 12px 16px 4px;
+  text-align: right;
+  font-size: 12px;
+  color: var(--text3);
+}
+
+/* Summary header */
+.summary {
+  padding: 16px;
+  display: flex;
+  gap: 10px;
+}
+.summary-card {
+  flex: 1;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: var(--shadow);
+}
+.summary-card .sc-label {
+  font-size: 12px;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.summary-card .sc-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.summary-card .sc-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 4px;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  padding: 0 16px;
+  gap: 0;
+  background: var(--bg);
+}
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+.tab.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+
+/* Fuwa Cards - 参考截图样式 */
+.card-list { padding: 8px 12px; }
+
+.fuwa-card {
+  background: var(--card);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  transition: transform 0.12s;
+  position: relative;
+}
+.fuwa-card:active { transform: scale(0.985); }
+
+/* 顶部行：圆形评分 + 名字 + 收益率 */
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* 圆形评分头像 - 参考截图 */
+.score-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  position: relative;
+}
+.score-ring {
+  position: absolute;
+  top: 0; left: 0;
+  width: 48px; height: 48px;
+}
+.score-ring circle {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.score-ring .ring-bg { stroke: var(--border); }
+.score-ring .ring-fg { stroke: var(--green); transition: stroke-dashoffset 0.5s; }
+.score-ring .ring-fg.negative-ring { stroke: var(--red); }
+
+.card-name-area { flex: 1; }
+.card-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+.card-sub {
+  font-size: 12px;
+  color: var(--text3);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; }
+.dot-running { background: var(--green); }
+.dot-stopped { background: var(--red); }
+
+.card-return {
+  text-align: right;
+}
+.card-return .ret-label {
+  font-size: 11px;
+  color: var(--text3);
+}
+.card-return .ret-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 标签 */
+.card-tags {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--tag-bg);
+  color: var(--text2);
+}
+.tag-green { background: var(--green-light); color: var(--green); }
+
+/* 底部统计 */
+.card-stats {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 0.5px solid var(--border);
+}
+.cs-item { }
+.cs-item .cs-label {
+  font-size: 11px;
+  color: var(--text3);
+}
+.cs-item .cs-value {
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 底部栏 */
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 0.5px solid var(--border);
+}
+.card-footer .cf-info {
+  font-size: 12px;
+  color: var(--text3);
+}
+.card-footer .cf-link {
+  font-size: 13px;
+  color: var(--green);
+  font-weight: 500;
+}
+
+/* Positive / Negative */
+.positive { color: var(--green); }
+.negative { color: var(--red); }
+.neutral { color: var(--text3); }
+
+/* ============= Detail Panel ============= */
+.detail-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.35);
+  z-index: 100; display: none;
+  animation: fadeIn 0.2s;
+}
+.detail-panel {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--bg);
+  border-radius: 16px 16px 0 0;
+  max-height: 92vh;
+  overflow-y: auto;
+  z-index: 101; display: none;
+  animation: slideUp 0.3s;
+}
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+
+.detail-handle {
+  width: 36px; height: 4px;
+  background: #ddd; border-radius: 2px;
+  margin: 8px auto 0;
+}
+
+.detail-header {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  margin: 8px 12px 0;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+}
+
+.detail-section {
+  background: var(--card);
+  border-radius: 14px;
+  margin: 10px 12px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.detail-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text2);
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.sg-item { text-align: center; }
+.sg-label { font-size: 11px; color: var(--text3); }
+.sg-value { font-size: 18px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
+/* Holding */
+.holding-item {
+  display: flex; align-items: center;
+  padding: 10px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.holding-item:last-child { border-bottom: none; }
+.holding-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0; margin-right: 10px;
+  background: var(--tag-bg); color: var(--text2);
+}
+.holding-info { flex: 1; }
+.holding-name { font-size: 14px; font-weight: 500; }
+.holding-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.holding-pnl { text-align: right; }
+.holding-pnl .hp-value { font-size: 14px; font-weight: 600; }
+.holding-pnl .hp-pct { font-size: 11px; }
+
+/* Trade */
+.trade-item {
+  display: flex; align-items: center;
+  padding: 10px 0;
+  border-bottom: 0.5px solid var(--border);
+  gap: 10px;
+}
+.trade-item:last-child { border-bottom: none; }
+.trade-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.trade-buy { background: var(--green-light); color: var(--green); }
+.trade-sell { background: var(--red-light); color: var(--red); }
+.trade-info { flex: 1; }
+.trade-title { font-size: 13px; font-weight: 500; }
+.trade-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.trade-result { text-align: right; }
+.trade-amount { font-size: 13px; font-weight: 600; }
+.trade-time { font-size: 10px; color: var(--text3); }
+
+/* Loading */
+.loading { text-align: center; padding: 60px 20px; color: var(--text3); }
+.loading .spinner {
+  display: inline-block; width: 28px; height: 28px;
+  border: 2.5px solid var(--border); border-top-color: var(--green);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to{transform:rotate(360deg)} }
+
+.empty-state { text-align: center; padding: 30px; color: var(--text3); }
+.empty-state .emoji { font-size: 36px; margin-bottom: 8px; }
+
+/* Refresh FAB */
+.refresh-btn {
+  position: fixed; bottom: 20px; right: 16px;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: var(--green); color: white; border: none;
+  font-size: 18px; box-shadow: 0 4px 16px rgba(0,181,120,0.35);
+  cursor: pointer; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+}
+.refresh-btn:active { transform: scale(0.9); }
+</style>
+</head>
+<body>
+
+<div class="navbar">🐾 福娃战队</div>
+
+<div class="summary" id="summary">
+  <div class="summary-card">
+    <div class="sc-label">总资产</div>
+    <div class="sc-value" id="grand-total">--</div>
+    <div class="sc-sub">初始 ¥1,000,000</div>
+  </div>
+  <div class="summary-card">
+    <div class="sc-label">总盈亏</div>
+    <div class="sc-value" id="grand-pnl">--</div>
+    <div class="sc-sub" id="grand-pnl-pct">--</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="all" onclick="switchTab('all')">全部</div>
+  <div class="tab" data-tab="gold" onclick="switchTab('gold')">💰 黄金</div>
+  <div class="tab" data-tab="fund" onclick="switchTab('fund')">💎 基金</div>
+</div>
+
+<div class="sort-bar" id="sort-bar">按盈亏排名 · 共 10 位福娃</div>
+
+<div class="card-list" id="card-list">
+  <div class="loading"><div class="spinner"></div><p style="margin-top:12px">加载中...</p></div>
+</div>
+
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetail()"></div>
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-handle"></div>
+  <div id="detail-content"></div>
+</div>
+
+<button class="refresh-btn" onclick="loadData()">↻</button>
+
+<script>
+let DATA = null, currentTab = 'all';
+
+async function loadData() {
+  try {
+    DATA = {"timestamp": "2026-03-01T22:10:19.698726", "gold": {"total_value": 502570.4, "total_pnl": 2570.4, "total_pnl_pct": 0.51, "total_trades": 221, "fuwas": [{"name": "欢欢", "emoji": "🔥", "style": "激进", "type": "gold", "cash": 71137.24, "position": 26, "position_unit": "克", "avg_price": 1156.0, "total_value": 101193.24, "pnl": 1193.24, "pnl_pct": 1.19, "trades": 84, "wins": 16, "losses": 14, "total_profit": 1193.24, "history": [], "q_states": 4}, {"name": "晶晶", "emoji": "🐼", "style": "趋势", "type": "gold", "cash": 30485.08, "position": 61, "position_unit": "克", "avg_price": 1156.0, "total_value": 101001.08, "pnl": 1001.08, "pnl_pct": 1.0, "trades": 22, "wins": 7, "losses": 1, "total_profit": 1001.08, "history": [], "q_states": 4}, {"name": "妮妮", "emoji": "🕊️", "style": "均值回归", "type": "gold", "cash": 30326.68, "position": 61, "position_unit": "克", "avg_price": 1156.0, "total_value": 100842.68, "pnl": 842.68, "pnl_pct": 0.84, "trades": 51, "wins": 10, "losses": 8, "total_profit": 842.68, "history": [], "q_states": 4}, {"name": "贝贝", "emoji": "🐟", "style": "保守", "type": "gold", "cash": 100000, "position": 0, "total_value": 100000, "pnl": 0, "pnl_pct": 0, "trades": 0, "wins": 0, "losses": 0, "avg_price": 0, "history": [], "q_states": 0}, {"name": "迎迎", "emoji": "🦌", "style": "动量", "type": "gold", "cash": 30173.4, "position": 60, "position_unit": "克", "avg_price": 1156.0, "total_value": 99533.4, "pnl": -466.6, "pnl_pct": -0.47, "trades": 64, "wins": 11, "losses": 13, "total_profit": -466.6, "history": [], "q_states": 4}]}, "fund": {"total_value": 499977.5, "total_pnl": -22.5, "total_pnl_pct": -0.0, "total_trades": 17, "fuwas": [{"name": "小虎", "emoji": "🐯", "style": "激进追涨", "type": "fund", "cash": 96000.0, "holdings": [{"code": "011036", "name": "嘉实稀土", "shares": 1917.18, "avg_cost": 1.5648, "nav": 1.5648, "value": 3000.0, "pnl_pct": 0.0, "lots": []}, {"code": "008888", "name": "华夏半导体芯片", "shares": 297.16, "avg_cost": 1.6826, "nav": 1.6826, "value": 500.0, "pnl_pct": 0.0, "lots": []}, {"code": "014855", "name": "嘉实半导体增强", "shares": 217.52, "avg_cost": 2.2986, "nav": 2.2986, "value": 499.99, "pnl_pct": 0.0, "lots": []}], "total_value": 100000.0, "pnl": -0.0, "pnl_pct": -0.0, "trades": 3, "wins": 0, "losses": 0, "total_profit": 0.0, "history": [{"action": "BUY", "code": "011036", "name": "嘉实中证稀土产业ETF联接C", "amount": 3000, "shares": 1917.18, "nav": 1.5648, "timestamp": "2026-03-01T14:18:40.891000"}, {"action": "BUY", "code": "008888", "name": "华夏国证半导体芯片ETF联接C", "amount": 500, "shares": 297.16, "nav": 1.6826, "timestamp": "2026-03-01T14:18:40.891087"}, {"action": "BUY", "code": "014855", "name": "嘉实中证半导体指数增强发起式C", "amount": 500, "shares": 217.52, "nav": 2.2986, "timestamp": "2026-03-01T14:18:40.891196"}], "q_states": 15, "enhanced_states": 2}, {"name": "金凤", "emoji": "🦅", "style": "轮动集中", "type": "fund", "cash": 96000.0, "holdings": [{"code": "011036", "name": "嘉实稀土", "shares": 1917.18, "avg_cost": 1.5648, "nav": 1.5648, "value": 3000.0, "pnl_pct": 0.0, "lots": []}, {"code": "008888", "name": "华夏半导体芯片", "shares": 297.16, "avg_cost": 1.6826, "nav": 1.6826, "value": 500.0, "pnl_pct": 0.0, "lots": []}, {"code": "014855", "name": "嘉实半导体增强", "shares": 217.52, "avg_cost": 2.2986, "nav": 2.2986, "value": 499.99, "pnl_pct": 0.0, "lots": []}], "total_value": 100000.0, "pnl": -0.0, "pnl_pct": -0.0, "trades": 3, "wins": 0, "losses": 0, "total_profit": 0.0, "history": [{"action": "BUY", "code": "011036", "name": "嘉实中证稀土产业ETF联接C", "amount": 3000, "shares": 1917.18, "nav": 1.5648, "timestamp": "2026-03-01T14:18:40.891310"}, {"action": "BUY", "code": "008888", "name": "华夏国证半导体芯片ETF联接C", "amount": 500, "shares": 297.16, "nav": 1.6826, "timestamp": "2026-03-01T14:18:40.891391"}, {"action": "BUY", "code": "014855", "name": "嘉实中证半导体指数增强发起式C", "amount": 500, "shares": 217.52, "nav": 2.2986, "timestamp": "2026-03-01T14:18:40.891496"}], "q_states": 15, "enhanced_states": 2}, {"name": "远航", "emoji": "🚀", "style": "趋势跟踪", "type": "fund", "cash": 96000.0, "holdings": [{"code": "011036", "name": "嘉实稀土", "shares": 1917.18, "avg_cost": 1.5648, "nav": 1.5648, "value": 3000.0, "pnl_pct": 0.0, "lots": []}, {"code": "008888", "name": "华夏半导体芯片", "shares": 297.16, "avg_cost": 1.6826, "nav": 1.6826, "value": 500.0, "pnl_pct": 0.0, "lots": []}, {"code": "014855", "name": "嘉实半导体增强", "shares": 217.52, "avg_cost": 2.2986, "nav": 2.2986, "value": 499.99, "pnl_pct": 0.0, "lots": []}], "total_value": 100000.0, "pnl": -0.0, "pnl_pct": -0.0, "trades": 3, "wins": 0, "losses": 0, "total_profit": 0.0, "history": [{"action": "BUY", "code": "011036", "name": "嘉实中证稀土产业ETF联接C", "amount": 3000, "shares": 1917.18, "nav": 1.5648, "timestamp": "2026-03-01T14:18:40.891622"}, {"action": "BUY", "code": "008888", "name": "华夏国证半导体芯片ETF联接C", "amount": 500, "shares": 297.16, "nav": 1.6826, "timestamp": "2026-03-01T14:18:40.891693"}, {"action": "BUY", "code": "014855", "name": "嘉实中证半导体指数增强发起式C", "amount": 500, "shares": 217.52, "nav": 2.2986, "timestamp": "2026-03-01T14:18:40.891793"}], "q_states": 15, "enhanced_states": 2}, {"name": "平衡", "emoji": "⚖️", "style": "均值回归", "type": "fund", "cash": 96000.0, "holdings": [{"code": "011036", "name": "嘉实稀土", "shares": 1917.18, "avg_cost": 1.5648, "nav": 1.5648, "value": 3000.0, "pnl_pct": 0.0, "lots": []}, {"code": "008888", "name": "华夏半导体芯片", "shares": 297.16, "avg_cost": 1.6826, "nav": 1.6826, "value": 500.0, "pnl_pct": 0.0, "lots": []}, {"code": "014855", "name": "嘉实半导体增强", "shares": 217.52, "avg_cost": 2.2986, "nav": 2.2986, "value": 499.99, "pnl_pct": 0.0, "lots": []}], "total_value": 100000.0, "pnl": -0.0, "pnl_pct": -0.0, "trades": 3, "wins": 0, "losses": 0, "total_profit": 0.0, "history": [{"action": "BUY", "code": "011036", "name": "嘉实中证稀土产业ETF联接C", "amount": 3000, "shares": 1917.18, "nav": 1.5648, "timestamp": "2026-03-01T14:18:40.891889"}, {"action": "BUY", "code": "008888", "name": "华夏国证半导体芯片ETF联接C", "amount": 500, "shares": 297.16, "nav": 1.6826, "timestamp": "2026-03-01T14:18:40.891968"}, {"action": "BUY", "code": "014855", "name": "嘉实中证半导体指数增强发起式C", "amount": 500, "shares": 217.52, "nav": 2.2986, "timestamp": "2026-03-01T14:18:40.892066"}], "q_states": 15, "enhanced_states": 1}, {"name": "大白", "emoji": "🐋", "style": "保守均配", "type": "fund", "cash": 95977.5, "holdings": [{"code": "011036", "name": "嘉实稀土", "shares": 1917.18, "avg_cost": 1.5648, "nav": 1.5648, "value": 3000.0, "pnl_pct": 0.0, "lots": [{"shares": 958.59, "cost": 1.5648, "date": "2026-02-27"}, {"shares": 958.59, "cost": 1.5648, "date": "2026-03-01"}]}, {"code": "008888", "name": "华夏半导体芯片", "shares": 297.16, "avg_cost": 1.6826, "nav": 1.6826, "value": 500.0, "pnl_pct": 0.0, "lots": []}, {"code": "014855", "name": "嘉实半导体增强", "shares": 217.52, "avg_cost": 2.2986, "nav": 2.2986, "value": 499.99, "pnl_pct": 0.0, "lots": []}], "total_value": 99977.5, "pnl": -22.5, "pnl_pct": -0.02, "trades": 5, "wins": 0, "losses": 1, "total_profit": -22.5, "history": [{"action": "BUY", "code": "011036", "name": "嘉实中证稀土产业ETF联接C", "amount": 3000, "shares": 1917.18, "nav": 1.5648, "timestamp": "2026-03-01T14:18:40.890262"}, {"action": "BUY", "code": "008888", "name": "华夏国证半导体芯片ETF联接C", "amount": 500, "shares": 297.16, "nav": 1.6826, "timestamp": "2026-03-01T14:18:40.890489"}, {"action": "BUY", "code": "014855", "name": "嘉实中证半导体指数增强发起式C", "amount": 500, "shares": 217.52, "nav": 2.2986, "timestamp": "2026-03-01T14:18:40.890870"}, {"action": "SELL", "code": "011036", "name": "嘉实中证稀土产业ETF联接C", "shares": 958.59, "nav": 1.5648, "profit": -22.5, "fee": 22.5, "fee_rate_note": "持2天费率1.5%", "holding_days": "持2天费率1.5%", "timestamp": "2026-03-01T14:30:36.339947"}, {"action": "BUY", "code": "011036", "name": "嘉实中证稀土产业ETF联接C", "amount": 1500.0, "shares": 958.59, "nav": 1.5648, "timestamp": "2026-03-01T14:30:36.340181"}], "q_states": 15, "enhanced_states": 25}]}, "grand_total": 1002547.9, "grand_pnl": 2547.9};
+    renderAll();
+  } catch(e) {
+    document.getElementById('card-list').innerHTML = '<div class="empty-state"><div class="emoji">📡</div><p>连接失败</p></div>';
+  }
+}
+
+function fmt(n, short) {
+  if (short && Math.abs(n) >= 10000) return '¥' + (n/10000).toFixed(2) + '万';
+  return '¥' + n.toLocaleString('zh-CN', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function pc(n) { return n > 0 ? 'positive' : (n < 0 ? 'negative' : 'neutral'); }
+function ps(n) { return n > 0 ? '+' : ''; }
+
+function renderAll() {
+  // Header
+  document.getElementById('grand-total').textContent = fmt(DATA.grand_total, true);
+  const pnl = DATA.grand_pnl;
+  const pe = document.getElementById('grand-pnl');
+  pe.textContent = ps(pnl) + fmt(pnl);
+  pe.className = 'sc-value ' + pc(pnl);
+  const pct = pnl / 10000 * 100;
+  const pp = document.getElementById('grand-pnl-pct');
+  pp.textContent = ps(pct) + pct.toFixed(2) + '%';
+  pp.className = 'sc-sub ' + pc(pnl);
+
+  renderCards();
+}
+
+function getFuwas() {
+  let f = [];
+  if (currentTab === 'all' || currentTab === 'gold') f = f.concat(DATA.gold.fuwas);
+  if (currentTab === 'all' || currentTab === 'fund') f = f.concat(DATA.fund.fuwas);
+  f.sort((a,b) => b.pnl - a.pnl);
+  return f;
+}
+
+function scoreFromPnl(pnl_pct) {
+  // Map pnl% to a 0-100 score for the ring
+  return Math.max(0, Math.min(100, 50 + pnl_pct * 20));
+}
+
+function makeRing(score, emoji) {
+  const r = 21, c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, score));
+  const offset = c - (pct / 100) * c;
+  const cls = score >= 50 ? '' : 'negative-ring';
+  return `
+  <div class="score-circle">
+    <svg class="score-ring" viewBox="0 0 48 48">
+      <circle class="ring-bg" cx="24" cy="24" r="${r}"/>
+      <circle class="ring-fg ${cls}" cx="24" cy="24" r="${r}"
+        stroke-dasharray="${c}" stroke-dashoffset="${offset}"
+        transform="rotate(-90 24 24)"/>
+    </svg>
+    <span style="font-size:20px;z-index:1">${emoji}</span>
+  </div>`;
+}
+
+function renderCards() {
+  const fuwas = getFuwas();
+  const total = DATA.gold.fuwas.length + DATA.fund.fuwas.length;
+  document.getElementById('sort-bar').textContent = `按盈亏排名 · 共 ${total} 位福娃`;
+
+  if (!fuwas.length) {
+    document.getElementById('card-list').innerHTML = '<div class="empty-state"><div class="emoji">🐾</div><p>暂无</p></div>';
+    return;
+  }
+
+  let html = '';
+  fuwas.forEach((f, i) => {
+    const wr = (f.wins+f.losses) > 0 ? ((f.wins/(f.wins+f.losses))*100).toFixed(1) : '0.0';
+    const score = scoreFromPnl(f.pnl_pct);
+    const typeLabel = f.type === 'gold' ? '黄金' : '基金';
+    const typeDot = '🟢'; // running status placeholder
+
+    let pos = '';
+    if (f.type === 'gold') pos = f.position > 0 ? f.position + '克' : '空仓';
+    else {
+      const n = (f.holdings||[]).filter(h=>h.shares>0).length;
+      pos = n > 0 ? n + '只基金' : '空仓';
+    }
+
+    const tags = [
+      `<span class="tag tag-green">${typeLabel}</span>`,
+      `<span class="tag">${f.style}</span>`,
+      `<span class="tag">Q:${f.q_states}${f.enhanced_states ? '+E:'+f.enhanced_states : ''}</span>`,
+    ].join('');
+
+    html += `
+    <div class="fuwa-card" onclick="showDetail('${f.name}','${f.type}')">
+      <div class="card-top">
+        ${makeRing(score, f.emoji)}
+        <div class="card-name-area">
+          <div class="card-name">${f.name}</div>
+          <div class="card-sub"><span class="dot dot-running"></span> ${pos} · ${f.trades}笔交易</div>
+        </div>
+        <div class="card-return">
+          <div class="ret-label">收益率</div>
+          <div class="ret-value ${pc(f.pnl_pct)}">${ps(f.pnl_pct)}${f.pnl_pct}%</div>
+        </div>
+      </div>
+      <div class="card-tags">${tags}</div>
+      <div class="card-stats">
+        <div class="cs-item">
+          <div class="cs-label">盈亏</div>
+          <div class="cs-value ${pc(f.pnl)}">${ps(f.pnl)}${fmt(f.pnl)}</div>
+        </div>
+        <div class="cs-item">
+          <div class="cs-label">胜率</div>
+          <div class="cs-value">${wr}%</div>
+        </div>
+        <div class="cs-item">
+          <div class="cs-label">交易次数</div>
+          <div class="cs-value">${f.trades}</div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <span class="cf-info">总额 ${fmt(f.total_value, true)}</span>
+        <span class="cf-link">查看详情 →</span>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('card-list').innerHTML = html;
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+  if (DATA) renderCards();
+}
+
+function showDetail(name, type) {
+  const fuwas = type === 'gold' ? DATA.gold.fuwas : DATA.fund.fuwas;
+  const f = fuwas.find(x => x.name === name);
+  if (!f) return;
+  const wr = (f.wins+f.losses)>0?((f.wins/(f.wins+f.losses))*100).toFixed(1):'0.0';
+
+  let html = `
+  <div class="detail-header">
+    ${makeRing(scoreFromPnl(f.pnl_pct), f.emoji)}
+    <div style="flex:1">
+      <div style="font-size:17px;font-weight:700">${f.name}</div>
+      <div style="font-size:12px;color:var(--text3)">${f.style} · ${type==='gold'?'黄金AU9999':'基金投资'}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="${pc(f.pnl)}" style="font-size:24px;font-weight:700">${ps(f.pnl_pct)}${f.pnl_pct}%</div>
+      <div class="${pc(f.pnl)}" style="font-size:12px">${ps(f.pnl)}${fmt(f.pnl)}</div>
+    </div>
+  </div>
+
+  <div class="detail-section">
+    <div class="stats-grid">
+      <div class="sg-item"><div class="sg-label">总资产</div><div class="sg-value">${fmt(f.total_value, true)}</div></div>
+      <div class="sg-item"><div class="sg-label">现金</div><div class="sg-value">${fmt(f.cash, true)}</div></div>
+      <div class="sg-item"><div class="sg-label">已实现</div><div class="sg-value ${pc(f.total_profit)}">${ps(f.total_profit)}${fmt(f.total_profit)}</div></div>
+    </div>
+    <div style="height:10px"></div>
+    <div class="stats-grid">
+      <div class="sg-item"><div class="sg-label">胜率</div><div class="sg-value">${wr}%</div></div>
+      <div class="sg-item"><div class="sg-label">交易</div><div class="sg-value">${f.trades}笔</div></div>
+      <div class="sg-item"><div class="sg-label">战绩</div><div class="sg-value"><span class="positive">${f.wins}胜</span> <span class="negative">${f.losses}负</span></div></div>
+    </div>
+  </div>`;
+
+  // Holdings
+  if (type === 'gold' && f.position > 0) {
+    const unr = (1156-f.avg_price)*f.position;
+    const unrP = f.avg_price>0?((1156-f.avg_price)/f.avg_price*100).toFixed(1):'0';
+    html += `
+    <div class="detail-section"><h3>📊 持仓</h3>
+      <div class="holding-item">
+        <div class="holding-icon" style="background:#fff8e1;color:#ff8f00">Au</div>
+        <div class="holding-info">
+          <div class="holding-name">AU9999 · ${f.position}克</div>
+          <div class="holding-sub">均价 ¥${f.avg_price.toFixed(2)} · 现价 ¥1,156</div>
+        </div>
+        <div class="holding-pnl">
+          <div class="hp-value ${pc(unr)}">${ps(unr)}¥${unr.toFixed(2)}</div>
+          <div class="hp-pct ${pc(unr)}">${ps(+unrP)}${unrP}%</div>
+        </div>
+      </div>
+    </div>`;
+  }
+  if (type === 'fund' && f.holdings && f.holdings.length > 0) {
+    const icons = {'008888':'芯','011036':'稀','014855':'半'};
+    html += '<div class="detail-section"><h3>📊 持仓</h3>';
+    f.holdings.forEach(h => {
+      if (h.shares > 0) {
+        html += `
+        <div class="holding-item">
+          <div class="holding-icon">${icons[h.code]||'基'}</div>
+          <div class="holding-info">
+            <div class="holding-name">${h.name}</div>
+            <div class="holding-sub">${h.shares.toFixed(0)}份 · 成本 ¥${h.avg_cost.toFixed(4)}</div>
+          </div>
+          <div class="holding-pnl">
+            <div class="hp-value">${fmt(h.value)}</div>
+            <div class="hp-pct ${pc(h.pnl_pct)}">${ps(h.pnl_pct)}${h.pnl_pct}%</div>
+          </div>
+        </div>`;
+      }
+    });
+    html += '</div>';
+  }
+
+  // Trades
+  html += '<div class="detail-section"><h3>📝 交易记录</h3>';
+  if (f.history && f.history.length > 0) {
+    [...f.history].reverse().forEach(t => {
+      const isBuy = t.action === 'BUY';
+      const time = t.timestamp ? t.timestamp.slice(5,16).replace('T',' ') : '--';
+      let title, detail, result;
+      if (type === 'gold') {
+        title = `${isBuy?'买入':'卖出'} ${t.grams||t.amount||0}克`;
+        detail = `@ ¥${(t.price||0).toFixed(2)}${t.fee?' · 费¥'+t.fee.toFixed(2):''}`;
+        result = isBuy ? fmt(t.cost||0) : `<span class="${pc(t.profit||0)}">${ps(t.profit||0)}¥${(t.profit||0).toFixed(2)}</span>`;
+      } else {
+        title = `${isBuy?'买入':'卖出'} ${t.name||t.code||''}`;
+        detail = isBuy ? `¥${(t.amount||0).toFixed(0)} · ${(t.shares||0).toFixed(0)}份` : `${(t.shares||0).toFixed(0)}份 · 费¥${(t.fee||0).toFixed(2)}`;
+        if (t.fee_rate_note) detail += ` · ${t.fee_rate_note}`;
+        result = isBuy ? fmt(t.amount||0) : `<span class="${pc(t.profit||0)}">${ps(t.profit||0)}¥${(t.profit||0).toFixed(2)}</span>`;
+      }
+      html += `
+      <div class="trade-item">
+        <div class="trade-icon ${isBuy?'trade-buy':'trade-sell'}">${isBuy?'B':'S'}</div>
+        <div class="trade-info"><div class="trade-title">${title}</div><div class="trade-sub">${detail}</div></div>
+        <div class="trade-result"><div class="trade-amount">${result}</div><div class="trade-time">${time}</div></div>
+      </div>`;
+    });
+  } else {
+    html += '<div class="empty-state" style="padding:16px"><div class="emoji" style="font-size:28px">📭</div><p style="font-size:13px">暂无交易记录</p></div>';
+  }
+  html += '</div><div style="height:40px"></div>';
+
+  document.getElementById('detail-content').innerHTML = html;
+  document.getElementById('detail-overlay').style.display = 'block';
+  document.getElementById('detail-panel').style.display = 'block';
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').style.display = 'none';
+  document.getElementById('detail-panel').style.display = 'none';
+}
+
+let ty=0;
+document.getElementById('detail-panel').addEventListener('touchstart',e=>{ty=e.touches[0].clientY;});
+document.getElementById('detail-panel').addEventListener('touchmove',e=>{
+  if(e.touches[0].clientY-ty>80 && document.getElementById('detail-panel').scrollTop<=0) closeDetail();
+});
+
+loadData();
+setInterval(loadData, 60000);
+</script>
+</body>
+</html>
