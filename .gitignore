@@ -1,0 +1,10 @@
+data/
+__pycache__/
+*.pyc
+push_update.sh
+server.py
+generate_snapshot.py
+api/
+vercel.json
+publish.sh
+static.html
