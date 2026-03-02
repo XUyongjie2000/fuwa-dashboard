@@ -427,18 +427,7 @@ function pc(n) { return n > 0 ? 'positive' : (n < 0 ? 'negative' : 'neutral'); }
 function ps(n) { return n > 0 ? '+' : ''; }
 
 function renderAll() {
-  // Header
-  document.getElementById('grand-total').textContent = fmt(DATA.grand_total, true);
-  document.getElementById('grand-initial').textContent = '初始 ' + fmt(DATA.grand_initial || 300000, true);
-  const pnl = DATA.grand_pnl;
-  const pe = document.getElementById('grand-pnl');
-  pe.textContent = ps(pnl) + fmt(pnl);
-  pe.className = 'sc-value ' + pc(pnl);
-  const pct = DATA.grand_initial ? (pnl / DATA.grand_initial * 100) : 0;
-  const pp = document.getElementById('grand-pnl-pct');
-  pp.textContent = ps(pct) + pct.toFixed(2) + '%';
-  pp.className = 'sc-sub ' + pc(pnl);
-
+  updateSummary();
   renderCards();
 }
 
@@ -544,7 +533,39 @@ function switchTab(tab) {
   currentTab = tab;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
-  if (DATA) renderCards();
+  if (DATA) {
+    updateSummary();
+    renderCards();
+  }
+}
+
+function updateSummary() {
+  let total, initial, pnl, label;
+  if (currentTab === 'all') {
+    total = DATA.grand_total;
+    initial = DATA.grand_initial || 300000;
+    pnl = DATA.grand_pnl;
+    label = '总资产';
+  } else {
+    const group = currentTab === 'gold' ? DATA.gold : DATA.fund;
+    total = group.fuwas.reduce((s, f) => s + f.total_value, 0);
+    initial = group.fuwas.length * (group.fuwas[0]?.initial_cash || 30000);
+    pnl = total - initial;
+    label = currentTab === 'gold' ? '黄金资产' : '基金资产';
+  }
+  document.querySelector('.summary-card:first-child .sc-label').textContent = label;
+  document.getElementById('grand-total').textContent = fmt(total, true);
+  document.getElementById('grand-initial').textContent = '初始 ' + fmt(initial, true);
+  const pe = document.getElementById('grand-pnl');
+  pe.textContent = ps(pnl) + fmt(pnl);
+  pe.className = 'sc-value ' + pc(pnl);
+  const pct = initial ? (pnl / initial * 100) : 0;
+  const pp = document.getElementById('grand-pnl-pct');
+  pp.textContent = ps(pct) + pct.toFixed(2) + '%';
+  pp.className = 'sc-sub ' + pc(pnl);
+  // 盈亏标签也更新
+  document.querySelector('.summary-card:nth-child(2) .sc-label').textContent = 
+    currentTab === 'all' ? '总盈亏' : (currentTab === 'gold' ? '黄金盈亏' : '基金盈亏');
 }
 
 function showDetail(name, type) {
