@@ -669,6 +669,74 @@ document.getElementById('detail-panel').addEventListener('touchmove',e=>{
 
 loadData();
 setInterval(loadData, 60000);
+
+// 实时金价更新（每30秒）
+async function fetchLiveGoldPrice() {
+  try {
+    // 用 JSONP 方式请求新浪金价（跨域）
+    return new Promise((resolve, reject) => {
+      const cb = '_gold_cb_' + Date.now();
+      const script = document.createElement('script');
+      script.src = `https://hq.sinajs.cn/list=nf_AU0&_=${Date.now()}`;
+      // 新浪返回的不是JSONP，是赋值语句，需要拦截
+      script.onload = () => {
+        try {
+          const raw = window['hq_str_nf_AU0'];
+          if (raw) {
+            const parts = raw.split(',');
+            const bid = parseFloat(parts[6]);
+            const ask = parseFloat(parts[7]);
+            const price = ((bid + ask) / 2) * 0.999; // 校准系数
+            resolve(price);
+          }
+        } catch(e) {}
+        script.remove();
+      };
+      script.onerror = () => { script.remove(); reject(); };
+      document.head.appendChild(script);
+    });
+  } catch(e) { return null; }
+}
+
+async function updateLivePnL() {
+  if (!DATA) return;
+  try {
+    const livePrice = await fetchLiveGoldPrice();
+    if (!livePrice || livePrice < 500) return;
+
+    // 更新金价显示
+    DATA.gold_price = livePrice;
+
+    // 重算每个黄金福娃的浮盈
+    DATA.gold.fuwas.forEach(f => {
+      if (f.position > 0) {
+        const newValue = f.cash + f.position * livePrice;
+        f.total_value = newValue;
+        f.pnl = newValue - 30000;
+        f.pnl_pct = parseFloat((f.pnl / 30000 * 100).toFixed(2));
+      }
+    });
+
+    // 重算黄金汇总
+    DATA.gold.total_value = DATA.gold.fuwas.reduce((s,f) => s + f.total_value, 0);
+    DATA.gold.total_pnl = DATA.gold.total_value - DATA.gold.fuwas.length * 30000;
+
+    // 重算总计
+    DATA.grand_total = DATA.gold.total_value + DATA.fund.total_value;
+    DATA.grand_pnl = DATA.grand_total - DATA.grand_initial;
+
+    // 更新时间显示
+    const now = new Date();
+    const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    document.querySelector('.navbar').innerHTML = `QAlpha <span style="font-size:11px;font-weight:400;color:var(--text3);margin-left:4px">AU ¥${livePrice.toFixed(2)} · ${timeStr}</span>`;
+
+    renderAll();
+  } catch(e) {}
+}
+
+// 交易时段每30秒刷新金价
+setInterval(updateLivePnL, 30000);
+setTimeout(updateLivePnL, 2000); // 首次2秒后
 </script>
 </body>
 </html>
